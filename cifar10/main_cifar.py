@@ -63,15 +63,6 @@ def load_cifar_data(valid_size=0.1, shuffle=True, resize = None, random_seed=200
     """
         We return train and test for plots and post-training experiments
     """
-    # transf_seq = [
-    #   transforms.ToTensor(),
-    #   transforms.Normalize(mean=[0.485, 0.456, 0.406],
-    #                        std=[0.229, 0.224, 0.225])
-    # ]
-    # if resize and (resize[0] != 32 or resize[1] != 32):
-    #     transf_seq.insert(0, transforms.Resize(resize))
-
-    # transform = transforms.Compose(transf_seq)
 
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -87,27 +78,8 @@ def load_cifar_data(valid_size=0.1, shuffle=True, resize = None, random_seed=200
     ])
 
     # normalized according to pytorch torchvision guidelines https://chsasank.github.io/vision/models.html
-    train = CIFAR10('/om2/user/anirbans/dataset/CIFAR-10/', train=True, download=True, transform=transform_train)
-    test  = CIFAR10('/om2/user/anirbans/dataset/CIFAR-10/', train=False, download=True, transform=transform_test)
-    # test_c_data = torch.FloatTensor(np.load('/DATA1/puneet/CIFAR-10-C/gaussian_noise.npy').transpose(0,3,1,2))/255.
-    # test_c_data = test_c_data[0:10000] #severity 1
-    # test_c_targets = torch.LongTensor(np.load('/DATA1/puneet/CIFAR-10-C/labels.npy'))[0:10000]
-    # test_c = TensorDataset(test_c_data,test_c_targets)
-    # print (train.shape)
-
-    # test_c = np.load('/home/cs16resch11006/DATASET/CIFAR-10-C/gaussian_noise.npy')#.transpose(0,3,1,2)/255
-    # test_c_labels = np.load('/home/cs16resch11006/DATASET/CIFAR-10-C/labels.npy')
-    # # print (np.shape(test_c[0:10000]))
-    # # print (np.shape(test_c_labels[0:10000]))
-    # # print (test_c_labels[0:10])
-    # for i in range(10):
-    #     os.makedirs(os.path.join('/home/cs16resch11006/DATASET/test', str(i)))
-    # for i in range(30000,40000):
-    #     img = Image.fromarray(test_c[i], 'RGB')
-    #     img.save('/home/cs16resch11006/DATASET/test/'+str(test_c_labels[i])+'/'+ str(i)+'.png')
-    # test_c_dataset = dset.ImageFolder(root='/home/cs16resch11006/DATASET/test', transform = transform_test)
-    # test_c_loader = dataloader.DataLoader(test_c_dataset, batch_size=batch_size, num_workers=num_workers)
-    # # print (test_c_loader.shape)
+    train = CIFAR10('/dataset/CIFAR-10/', train=True, download=True, transform=transform_train)
+    test  = CIFAR10('/dataset/CIFAR-10/', train=False, download=True, transform=transform_test)
 
     num_train = len(train)
     indices = list(range(num_train))
@@ -222,15 +194,6 @@ def main():
     model        = GSENN(conceptizer, aggregator)
 
 
-    # if not args.train and args.load_model:
-    #     checkpoint = torch.load(os.path.join(model_path,'model_best.pth.tar'), map_location=lambda storage, loc: storage)
-    #     checkpoint.keys()
-    #     model = checkpoint['model']
-    #
-    #
-
-
-
     if args.theta_reg_type in ['unreg','none', None]:
         trainer = VanillaClassTrainer(model, args)
     elif args.theta_reg_type == 'grad1':
@@ -253,9 +216,6 @@ def main():
         model = checkpoint['model']
         trainer =  VanillaClassTrainer(model, args) # arbtrary trained, only need to compuyte val acc
 
-    # trainer.validate(test_loader, fold = 'test')
-    # trainer.evaluate(test_loader, fold = 'test')
-
     model.eval()
 
      #Check accuracy with the best model
@@ -274,112 +234,6 @@ def main():
 
     # 0. Concept Grid for Visualization
     concept_grid(model, test_loader, top_k = 10, cuda = args.cuda, save_path = results_path + '/concept_grid.pdf')
-
-    # ### 1. Single point lipshiz estimate via black box optim (for fair comparison)
-    # # with other methods in which we have to use BB optimization.
-    # features = None
-    # classes = [str(i) for i in range(10)]
-    # expl = gsenn_wrapper(model,
-    #                     mode      = 'classification',
-    #                     input_type = 'image',
-    #                     multiclass=True,
-    #                     feature_names = features,
-    #                     class_names   = classes,
-    #                     train_data      = train_loader,
-    #                     skip_bias = True,
-    #                     verbose = False)
-
-
-    ### Debug single input
-    # x = next(iter(train_tds))[0]
-    # attr = expl(x, show_plot = False)
-    # pdb.set_trace()
-
-    # #### Debug multi input
-    # x = next(iter(test_loader))[0] # Transformed
-    # x_raw = test_loader.dataset.test_data[:args.batch_size,:,:]
-    # attr = expl(x, x_raw = x_raw, show_plot = True)
-    # #pdb.set_trace()
-
-    # #### Debug argmaz plot_theta_stability
-    if args.h_type == 'input':
-        x = next(iter(test_tds))[0].numpy()
-        y = next(iter(test_tds))[0].numpy()
-        x_raw = (test_tds.test_data[0].float()/255).numpy()
-        y_raw = revert_to_raw(x)
-        att_x = expl(x, show_plot = False)
-        att_y = expl(y, show_plot = False)
-        lip = 1
-        lipschitz_argmax_plot(x_raw, y_raw, att_x,att_y, lip)# save_path=fpath)
-        #pdb.set_trace()
-
-
-    ### 2. Single example lipschitz estimate with Black Box
-    do_bb_stability_example = False
-    if do_bb_stability_example:
-        print('**** Performing lipschitz estimation for a single point ****')
-        idx = 0
-        print('Example index: {}'.format(idx))
-        #x = train_tds[idx][0].view(1,28,28).numpy()
-        x = next(iter(test_tds))[0].numpy()
-
-        #x_raw = (test_tds.test_data[0].float()/255).numpy()
-        x_raw = (test_tds.test_data[0]/255)
-
-        #x_raw = next(iter(train_tds))[0]
-
-        # args.optim     = 'gp'
-        # args.lip_eps   = 0.1
-        # args.lip_calls = 10
-        Results = {}
-
-        lip, argmax = expl.local_lipschitz_estimate(x, bound_type='box_std',
-                                                optim=args.optim,
-                                                eps=args.lip_eps,
-                                                n_calls=4*args.lip_calls,
-                                                njobs = 1,
-                                                verbose=2)
-        #pdb.set_trace()
-        Results['lip_argmax'] = (x, argmax, lip)
-        # .reshape(inputs.shape[0], inputs.shape[1], -1)
-        att = expl(x, None, show_plot=False)#.squeeze()
-        # .reshape(inputs.shape[0], inputs.shape[1], -1)
-        att_argmax = expl(argmax, None, show_plot=False)#.squeeze()
-
-        #pdb.set_trace()
-        Argmax_dict = {'lip': lip, 'argmax': argmax, 'x': x}
-        fpath = os.path.join(results_path, 'argmax_lip_gp_senn.pdf')
-        if args.h_type == 'input':
-            lipschitz_argmax_plot(x_raw, revert_to_raw(argmax), att, att_argmax, lip, save_path=fpath)
-        pickle.dump(Argmax_dict, open(
-            results_path + '/argmax_lip_gp_senn.pkl', "wb"))
-
-
-    #noise_stability_plots(model, test_tds, cuda = args.cuda, save_path = results_path)
-    ### 3. Local lipschitz estimate over multiple samples with Black BOx Optim
-    do_bb_stability = False
-    if do_bb_stability:
-        print('**** Performing black-box lipschitz estimation over subset of dataset ****')
-        maxpoints = 20
-        #valid_loader 0 it's shuffled, so it's like doing random choice
-        mini_test = next(iter(valid_loader))[0][:maxpoints].numpy()
-        lips = expl.estimate_dataset_lipschitz(mini_test,
-                                           n_jobs=-1, bound_type='box_std',
-                                           eps=args.lip_eps, optim=args.optim,
-                                           n_calls=args.lip_calls, verbose=2)
-        Stability_dict = {'lips': lips}
-        pickle.dump(Stability_dict, open(results_path + '_stability_blackbox.pkl', "wb"))
-        All_Results['stability_blackbox'] = lips
-
-
-    # pickle.dump(All_Results, open(results_path + '_combined_metrics.pkl'.format(dataname), "wb"))
-
-    
-    # args.epoch_stats = epoch_stats
-    # save_path = args.results_path
-    # print("Save train/dev results to", save_path)
-    # args_dict = vars(args)
-    # pickle.dump(args_dict, open(save_path,'wb') )
 
 if __name__ == '__main__':
     main()
