@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-""" Code for training and evaluating Self-Explaining Neural Networks.
-Copyright (C) 2018 David Alvarez-Melis <dalvmel@mit.edu>
+""" Code for training and evaluating A Framework for Learning Ante-hoc Explainable Models via Concepts.
+Copyright (C) 2022 Anirban Sarkar <anirbans@mit.edu>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
