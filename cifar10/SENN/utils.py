@@ -732,12 +732,11 @@ def concept_grid(model, data_loader, cuda=False, top_k = 6, layout = 'vertical',
             pos = (i,j) if layout == 'horizontal' else (j,i)
 
             l = i*top_k + j
-            print(i,j)
-            print(top_examples[i][j].shape)
-            # plt.imsave('/om2/user/anirbans/CIFAR10/scripts/test/cifar_' + str(i + 1) + '/' + str(j) + '.png', top_examples[i][j])
-            print (top_examples[i][j])
+            # print(i,j)
+            # print(top_examples[i][j].shape)
+            # print (top_examples[i][j])
             axes[pos].imshow(top_examples[i][j], cmap='Greys',  interpolation='nearest')
-            plt.imsave('/om2/user/anirbans/CIFAR10/test/cifar_' + str(i + 1) + '/' + str(j) + '.png',
+            plt.imsave('test/cifar_' + str(i + 1) + '/' + str(j) + '.png',
                        top_examples[i][j])
             # img = Image.fromarray(top_examples[i][j], 'RGB')
             # img.save('/om2/user/anirbans/CIFAR10/test/cifar_'+ str(i+1)+'/'+str(j)+'.png')
